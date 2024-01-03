@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign Up - BookInSync</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+        }
+
+        #signup-container {
+            text-align: center;
+        }
+
+        form {
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            width: 300px;
+            margin-top: 20px;
+        }
+
+        h1 {
+            color: #3498db;
+        }
+
+        h2 {
+            color: #555;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+        }
+
+        input {
+            width: 100%;
+            padding: 8px;
+            margin-bottom: 16px;
+            box-sizing: border-box;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+
+        input[type="submit"] {
+            background-color: #3498db;
+            color: #fff;
+            cursor: pointer;
+        }
+
+        input[type="submit"]:hover {
+            background-color: #2980b9;
+        }
+
+        #login-link {
+            margin-top: 15px;
+            font-size: 14px;
+            color: #555;
+            text-decoration: none;
+            display: block;
+            transition: color 0.3s ease;
+        }
+
+        #login-link:hover {
+            color: #3498db;
+        }
+    </style>
+</head>
+<body>
+    <div id="signup-container">
+        <h1>BookInSync</h1>
+        <br><br><br><br><br><br><br><br>
+        <h2>Create your account</h2>
+        <form method="post" action="{% url 'signup' %}">
+            {% csrf_token %}
+            <label for="id_username">Username:</label>
+            {{ form.username }}
+            <label for="id_email">Email:</label>
+            {{ form.email }}
+            <label for="id_password1">Password:</label>
+            {{ form.password1 }}
+            <label for="id_password2">Confirm Password:</label>
+            {{ form.password2 }}
+            <input type="submit" value="Sign Up">
+        </form>
+        <a href="{% url 'login' %}" id="login-link">Already signed up? Log in instead</a>
+    </div>
+</body>
+</html>

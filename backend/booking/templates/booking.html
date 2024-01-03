@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>BookInSync</title>
+    <link rel="stylesheet" href="styles.css" />
+    <style>
+      body {
+        font-family: "Arial", sans-serif;
+        background-color: #f4f4f4;
+        margin: 0;
+        padding: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: 100vh;
+      }
+
+      .container {
+        text-align: center;
+      }
+
+      .form-container {
+        margin-top: 20px;
+      }
+
+      .city-dropdown {
+        padding: 8px;
+        margin: 5px;
+      }
+
+      button {
+        padding: 10px;
+        margin-top: 10px;
+        background-color: #3498db;
+        color: #fff;
+        border: none;
+        cursor: pointer;
+        border-radius: 4px;
+      }
+
+      button:hover {
+        background-color: #2980b9;
+      }
+
+      .results-container {
+        margin-top: 20px;
+      }
+
+      .bus-card {
+        border: 1px solid #ccc;
+        padding: 20px;
+        margin: 10px;
+        border-radius: 8px;
+        background-color: #fff;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        display: inline-block;
+        text-align: left;
+      }
+
+      .book-btn {
+        background-color: #2ecc71;
+        color: #fff;
+        padding: 8px;
+        border: none;
+        cursor: pointer;
+        border-radius: 4px;
+      }
+
+      .book-btn:hover {
+        background-color: #27ae60;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>BookInSync</h1>
+      <button onclick="window.location.href='/auth/logout/'">Logout</button>
+      <div class="form-container">
+        <label for="source">Source City:</label>
+        <select id="source" class="city-dropdown"></select>
+
+        <label for="destination">Destination City:</label>
+        <select id="destination" class="city-dropdown"></select>
+
+        <button id="searchBtn" onclick="searchBuses()">Search</button>
+      </div>
+
+      <div id="busResults" class="results-container"></div>
+    </div>
+
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        loadCities();
+      });
+
+      async function fetchData() {
+        const apiUrl = "http://127.0.0.1:8000/api/booking/city/";
+
+        try {
+          const response = await fetch(apiUrl, {
+            method: "GET",
+            headers: {
+              "Content-Type": "application/json",
+              "Access-Control-Allow-Origin": "*",
+            },
+          });
+
+          if (!response.ok) {
+            throw new Error(`HTTP error! Status: ${response.status}`);
+          }
+
+          const data = await response.json();
+
+          console.log("JSON Response:", data);
+
+          return data;
+        } catch (error) {
+          console.error("Fetch Error:", error);
+
+          return { error: error };
+        }
+      }
+
+      async function loadCities() {
+        let cities = await fetchData();
+
+        const sourceDropdown = document.getElementById("source");
+        const destinationDropdown = document.getElementById("destination");
+
+        cities.forEach((city) => {
+          const option = document.createElement("option");
+          option.text = city.name;
+          option.value = city.name;
+          sourceDropdown.add(option.cloneNode(true));
+          destinationDropdown.add(option);
+        });
+      }
+
+      async function searchBuses() {
+        const sourceCity = document.getElementById("source").value;
+        const destinationCity = document.getElementById("destination").value;
+
+        const apiUrl =
+          "http://127.0.0.1:8000/api/booking/search/?src=" +
+          sourceCity +
+          "&dst=" +
+          destinationCity;
+
+        try {
+          const response = await fetch(apiUrl, {
+            method: "GET",
+            headers: {
+              "Content-Type": "application/json",
+              "Access-Control-Allow-Origin": "*",
+            },
+          });
+
+          if (!response.ok) {
+            throw new Error(`HTTP error! Status: ${response.status}`);
+          }
+
+          const data = await response.json();
+
+          console.log("JSON Response:", data);
+
+          displayBusResults(data);
+        } catch (error) {
+          console.error("Fetch Error:", error);
+        }
+      }
+
+      function displayBusResults(busData) {
+        const busResultsContainer = document.getElementById("busResults");
+        busResultsContainer.innerHTML = "";
+
+        busData.forEach((bus) => {
+          const busCard = document.createElement("div");
+          busCard.classList.add("bus-card");
+
+          let seats = [];
+
+          bus.seats.forEach((seat) => {
+            seats.push(seat.number);
+          });
+
+          const busInfo = document.createElement("p");
+          busInfo.innerHTML = `
+                      <b>Bus Name:</b> ${bus.name} <br>
+                      <b>Bus Number:</b> ${bus.number} <br>
+                      <b>Capacity:</b> ${bus.capacity} <br>
+                      <b>Occupied:</b> ${bus.occupancy} <br>
+                      <b>Seats Available:</b> ${seats.join(", ")} <br>
+                      <input type="number" placeholder="Seat Number" min="1" max="${
+                        bus.capacity
+                      }" id="seatNumber" />
+                  `;
+
+          busCard.appendChild(busInfo);
+
+          const bookBtn = document.createElement("button");
+          bookBtn.classList.add("book-btn");
+          bookBtn.innerHTML = "Book";
+          bookBtn.addEventListener("click", () => bookBus(bus.id, 1, bus.name));
+
+          busCard.appendChild(bookBtn);
+
+          busResultsContainer.appendChild(busCard);
+        });
+      }
+
+      function getCookie(name) {
+        if (!document.cookie) {
+          return null;
+        }
+
+        const xsrfCookies = document.cookie
+          .split(";")
+          .map((c) => c.trim())
+          .filter((c) => c.startsWith(name + "="));
+
+        if (xsrfCookies.length === 0) {
+          return null;
+        }
+        return decodeURIComponent(xsrfCookies[0].split("=")[1]);
+      }
+
+      async function bookBus(busId, seatNumber, busName) {
+        const apiUrl = "http://127.0.0.1:8000/api/booking/book/";
+
+        let csrf_token = getCookie("csrftoken");
+
+        seatNumber = document.getElementById("seatNumber").value;
+
+        try {
+          const response = await fetch(apiUrl, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "Access-Control-Allow-Origin": "*",
+              "X-CSRFToken": csrf_token,
+            },
+            body: JSON.stringify({ bus_id: busId, seat_number: seatNumber }),
+          });
+
+          if (!response.ok) {
+            if (response.status === 400) {
+              const data = await response.json();
+              alert(data.error);
+
+              return;
+            } else if (response.status === 404) {
+              alert("Seat not found");
+
+              return;
+            }
+          }
+
+          const data = await response.json();
+
+          console.log("JSON Response:", data);
+
+          alert(`Booking confirmed for Bus ${busName}`);
+        } catch (error) {
+          console.error("Fetch Error:", error);
+
+          alert(`Booking failed. Reason ${error}`);
+        }
+      }
+
+      function logout() {
+        window.location.href = "/auth/logout/";
+        document.cookie =
+          "csrftoken=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+      }
+    </script>
+  </body>
+</html>
